@@ -2,6 +2,11 @@
 # Ejercicio N° 15
 ## Desarrollo de Software
 
+## Alumnos: 
+### 52691 Albornoz Martina
+### 48232 Dorado Rocio
+### Comisión: 3K3  
+
 1. Clonar el repositorio creado al aceptar la asignación
 2. Crear una rama de larga duración denominada __development__
 3. Desarrollar una API Web basada en controladores en .NET, con las siguientes características:
