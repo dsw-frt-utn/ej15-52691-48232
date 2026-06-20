@@ -2,7 +2,7 @@
 using Dsw2026Ej15.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Dsw2026Ej15.Api.Controllers.Models;
-
+using Dsw2026Ej15.Domain.Exceptions; //para el post al usar el validation
 
 namespace Dsw2026Ej15.Api.Controllers;
 // para que el controlador sea reconocido como conrolador de una API
@@ -28,14 +28,16 @@ public class DoctorsController : AppControllers
     {
         if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.LicenseNumber))
         {
-            return BadRequest("Nombre y matricula son requeridos");
+            //si la validacion falla, ahi nomas se lanza la excepcion y frena ahi.
+            throw new Dsw2026Ej15.Domain.Exceptions.ValidationException("El Nombre y la matricula son requeridos");
         }
 
         var speciality = _persistence.GetSpecialityById(request.SpecialityId);
         if (speciality is null)
         {
-            return BadRequest("Especialidad no existe");
+            throw new Dsw2026Ej15.Domain.Exceptions.ValidationException("La especialidad no existe");
         }
+    }
 
         var doctor = new Doctor(request.Name, request.LicenseNumber, speciality);
         _persistence.SaveDoctor(doctor);
@@ -47,19 +49,52 @@ public class DoctorsController : AppControllers
     //2do endpoint
 
     // (IActionResult) interfaz que representa cualquier respuesta de un metodo basado en algun metodo del protocolo
-    [HttpGet("api/doctors")]
+    [HttpGet("doctors")]
     public IActionResult GetDoctors()
     {
         //ok es un metodo def en 200
-        return Ok();
+        var listaMedicos = _persistence.GetAllDoctors();
+
+        return Ok(listaMedicos);
     }
 
     //3er endpoint
-    [HttpGet("api/doctors/{id}")]
+    [HttpGet("doctors/{id}")]
     public IActionResult GetDoctors(Guid id)
     {
-        return Ok(id);
+        //busco el doctor 
+        var doctor = _persistence.GetDoctorById(id);
+        if (doctor == null || !doctor.IsActive)
+        {
+            return NotFound("El medico no existe o ya esta inactivo");
+        }
+
+        //si pasa el filtro entonces existe y ahi largo la info
+        var datosMedico = new
+        {
+            Name = doctor.Name,
+            LicenseNumber = doctor.LicenseNumber,
+            Speciality = doctor.Speciality?.Name
+        };
+        return Ok(datosMedico);
     }
 
-    //4to endpoint DELETE (FALTA HACER)
+    //4to endpoint
+    [HttpDelete("doctors/{id}")]
+    public IActionResult DeleteDoctor(Guid id)
+    {
+        var doctor = _persistence.GetDoctorById(id);
+
+        if (doctor == null || !doctor.IsActive)
+        {
+            return NotFound("El medico no existe o ya esta inactivo");
+        }
+        
+        _persistence.DeleteDoctor(id);
+        return NoContent();
+    }
+
+
+
+
 }
